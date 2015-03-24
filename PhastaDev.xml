@@ -1,0 +1,33 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+    <SourceProxy class="vtkPPhastaReaderDev"
+                 label="Phasta Reader"
+                 name="PhastaReaderDev">
+      <Documentation long_help="Reads the parallel Phasta meta-file and the underlying Phasta files."
+                     short_help="Read datasets stored in the Phasta format.">
+                     This Phasta reader reads files stored in the Phasta (a CFD
+                     package) format. The expected file extension is .pht. The
+                     output of this reader is a multipiece data
+                     set.</Documentation>
+      <StringVectorProperty animateable="0"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never" >
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the file name for the Phasta
+        reader.</Documentation>
+      </StringVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>Available timestep values.</Documentation>
+      </DoubleVectorProperty>
+      <Hints>
+        <ReaderFactory extensions="phtd"
+                       file_description="Phasta Files" />
+      </Hints>
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
