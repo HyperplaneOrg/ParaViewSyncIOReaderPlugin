@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkPhastaReaderDev.h
+  Module:    $RCSfile: vtkPhastaSyncIOReader.h,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,33 +12,38 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPhastaReaderDev - Reader for RPI's PHASTA software
+// .NAME vtkPhastaSyncIOReader - Reader for RPI's PHASTA software
 // .SECTION Description
-// vtkPhastaReaderDev reads RPI's Scorec's PHASTA (Parallel Hierarchic
+// vtkPhastaSyncIOReader reads RPI's Scorec's PHASTA (Parallel Hierarchic
 // Adaptive Stabilized Transient Analysis) dumps.  See
 // http://www.scorec.rpi.edu/software_products.html or contact Scorec for
 // information on PHASTA.
 
-#ifndef __vtkPhastaReaderDev_h
-#define __vtkPhastaReaderDev_h
+#ifndef __vtkPhastaSyncIOReader_h
+#define __vtkPhastaSyncIOReader_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkUnstructuredGridAlgorithm.h"
+#include "vtkPhastaSyncIOMetaReader.h"
 
 class vtkUnstructuredGrid;
 class vtkPoints;
 class vtkDataSetAttributes;
 class vtkInformationVector;
 
+/////////////////////
+class vtkPVXMLParser;
+class vtkPhastaSyncIOReader;
+//////////////////////
+
 //BTX
-struct vtkPhastaReaderDevInternal;
+struct vtkPhastaSyncIOReaderInternal;
 //ETX
 
-class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPhastaReaderDev : public vtkUnstructuredGridAlgorithm
+class VTK_EXPORT vtkPhastaSyncIOReader : public vtkUnstructuredGridAlgorithm
 {
 public:
-  static vtkPhastaReaderDev *New();
-  vtkTypeMacro(vtkPhastaReaderDev,vtkUnstructuredGridAlgorithm);
+  static vtkPhastaSyncIOReader *New();
+  vtkTypeMacro(vtkPhastaSyncIOReader,vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -52,7 +57,7 @@ public:
   vtkGetStringMacro(FieldFileName);
 
   // Description:
-  // Clear/Set info. in FieldInfoMap for object of vtkPhastaReaderDevInternal
+  // Clear/Set info. in FieldInfoMap for object of vtkPhastaSyncIOReaderInternal
   void ClearFieldInfo();
   void SetFieldInfo(const char *paraviewFieldTag,
                     const char* phastaFieldTag,
@@ -61,12 +66,9 @@ public:
                     int dataDependency,
                     const char* dataType);
 
-  void SetCachedGrid(vtkUnstructuredGrid*);
-  vtkGetObjectMacro(CachedGrid, vtkUnstructuredGrid);
-
 protected:
-  vtkPhastaReaderDev();
-  ~vtkPhastaReaderDev();
+  vtkPhastaSyncIOReader();
+  ~vtkPhastaSyncIOReader();
 
   virtual int RequestData(vtkInformation* request,
                           vtkInformationVector** inputVector,
@@ -89,7 +91,11 @@ protected:
 private:
   char *GeometryFileName;
   char *FieldFileName;
-  vtkUnstructuredGrid* CachedGrid;
+
+  ////////////////////
+  vtkPVXMLParser* Parser;
+  char* FileName;
+  ///////////////////
 
   int NumberOfVariables; //number of variable in the field file
 
@@ -98,13 +104,21 @@ private:
                         const char targetstring[] );
   static void isBinary( const char iotype[] );
   static size_t typeSize( const char typestring[] );
+  //CHANGE////////////////////////////////////////////////////
+
+  static void queryphmpiio_( const char filename[],
+			     int *nfields, 
+			     int *nppf );
+  static void finalizephmpiio_( int *fileDescriptor );
+
+  //CHANGE END///////////////////////////////////////////////
   static int readHeader( FILE*       fileObject,
                          const char  phrase[],
                          int*        params,
                          int         expect );
-  static void SwapArrayByteOrder( void* array, 
-                                  int   nbytes, 
-                                  int   nItems );
+  static void SwapArrayByteOrder_( void* array, 
+				   int   nbytes, 
+				   int   nItems );
   static void openfile( const char filename[],
                         const char mode[],
                         int*  fileDescriptor );
@@ -127,10 +141,10 @@ private:
   
   
 private:
-  vtkPhastaReaderDevInternal *Internal;
+  vtkPhastaSyncIOReaderInternal *Internal;
 
-  vtkPhastaReaderDev(const vtkPhastaReaderDev&); // Not implemented
-  void operator=(const vtkPhastaReaderDev&); // Not implemented
+  vtkPhastaSyncIOReader(const vtkPhastaSyncIOReader&); // Not implemented
+  void operator=(const vtkPhastaSyncIOReader&); // Not implemented
 };
 
 #endif
