@@ -1,0 +1,31 @@
+ParaView/VTK Reader for "SyncIO" PHASTA output files. 
+
+-For more information on PHASTA see https://github.com/PHASTA/phasta
+-For more information on ParaView see http://paraview.org/
+
+Building:
+
+To build this plugin you'll need a compiled ParaView build tree or a ParaView install with the development files installed. First locate the directory containing ParaViewConfig.cmake - we'll call it $PARAVIEW_DIR
+
+Make a build directory for this plugin:
+
+mkdir build
+cd build
+
+Create a Makefile:
+
+cmake -DParaView_DIR=$PARAVIEW_DIR ../syncio_plugin
+
+Make:
+
+make
+
+If all goes well, you should have a shared library libPhastaSyncIOReader.so (or .dynlib or .dll, depending on your platform)
+
+Running: 
+
+Open up ParaView, from the "Tools" menu choose "Manage Plugins". Click "Load New" and choose the shared library that you built in the last step.
+
+You should now see "PhastaSyncIOReader" in the right pane. You may want to expand it and check the "Auto Load" box. 
+
+You should now be able to load a ".phts" file (these are the same as regular PHASTA pht files, the extension has been changed to differentiate them from old style "POSIX" IO files). 
