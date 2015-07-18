@@ -1,7 +1,7 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="sources">
     <SourceProxy class="vtkPhastaSyncIOMetaReader"
-                 label="Phasta Reader"
+                 label="Phasta SyncIO Reader"
                  name="PhastaSyncIOReader">
       <Documentation long_help="Reads the parallel Phasta meta-file and the underlying Phasta files."
                      short_help="Read datasets stored in the Phasta format.">
