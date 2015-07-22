@@ -659,7 +659,7 @@ int vtkPhastaSyncIOMetaReader::RequestInformation(vtkInformation*,
 
   vtkInformation* info = outputVector->GetInformationObject(0);
   info->Set(
-    CAN_HANDLE_PIECE_REQUEST(), 1);
+    vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
 
   return 1;
 }
