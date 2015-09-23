@@ -975,7 +975,7 @@ int vtkPhastaSyncIOReader::RequestData(vtkInformation*,
 
 	output->Allocate(10000, 2100);
 
-	points = vtkPoints::New();
+	points = vtkPoints::New(VTK_DOUBLE);
 
 	vtkDebugMacro(<<"Reading Phasta file...");
 
