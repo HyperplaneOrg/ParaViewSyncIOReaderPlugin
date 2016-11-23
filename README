@@ -22,6 +22,10 @@ make
 
 If all goes well, you should have a shared library libPhastaSyncIOReader.so (or .dynlib or .dll, depending on your platform)
 
+If building ParaView from scratch, this plugin can be automatically built by putting
+this repository in the <ParaView source>/Plugins subdirectory or by setting
+PARAVIEW_EXTRA_EXTERNAL_PLUGIN to point to this repository.
+
 Running: 
 
 Open up ParaView, from the "Tools" menu choose "Manage Plugins". Click "Load New" and choose the shared library that you built in the last step.
