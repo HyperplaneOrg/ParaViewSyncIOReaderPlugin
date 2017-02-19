@@ -427,10 +427,8 @@ void vtkPhastaSyncIOReader::queryphmpiio_(const char filename[],int *nfields, in
 					SerialFile->masterHeader+sizeof("MPI_IO_Tag :"),
 					sizeof(int) );
 
-			if ( magic_number != ENDIAN_TEST_NUMBER )
-			{
-				diff_endian = 1;
-			}
+			if ( magic_number == ENDIAN_TEST_NUMBER ) diff_endian = 0;
+			else  diff_endian = 1;
 
 			char version[MAX_FIELDS_NAME_LENGTH/4];
 			int mhsize;
