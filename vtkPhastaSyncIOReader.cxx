@@ -1102,38 +1102,54 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 
 	int expect;
 	int array[10];
-
-	expect = 1;
-
-	/* read number of nodes */
+	/* read coordinates */
+	expect = 2;
 
 	///CHANGE/////////////////////////////////////////////////////
 	bzero((void*)fieldName,255);
-	sprintf(fieldName,"%s@%d","number of nodes",partID_counter);
-	///CHANGE END//////////////////////////////////////////////////
-	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
-	//readheader(&geomfile,"number of nodes",array,&expect,"integer","binary");
-  vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
-	int num_nodesb = array[0];
-        printf("0 num_nodesb: %d\n", num_nodesb);
+	sprintf(fieldName,"%s@%d","co-ordinates",partID_counter);
+	////CHANGE END//////////////////////////////////////////////////
+	readheader(&geomfile,fieldName,array,&expect,"double","binary");
 
-	/* read number of nodes */
 
-	///CHANGE/////////////////////////////////////////////////////
+	//readheader(&geomfile,"co-ordinates",array,&expect,"double","binary");
+	// TEST *******************
+	num_nodes=array[0];
+        ncverts=num_nodes;
+	dim = array[1];
+
+
+	/* read the coordinates */
+
+	coordinates = new double [dim];
+	if(coordinates == NULL)
+	{
+		vtkErrorMacro(<<"Unable to allocate memory for nodal info");
+		return;
+	}
+
+	pos = new double [num_nodes*dim];
+	if(pos == NULL)
+	{
+		vtkErrorMacro(<<"Unable to allocate memory for nodal info");
+		return;
+	}
+
+	item = num_nodes*dim;
+
+	//CHANGE
+	//readdatablock(&geomfile,"co-ordinates",pos,&item,"double","binary");
+	//CHANGE END
+	readdatablock(&geomfile,fieldName,pos,&item,"double","binary");
+
+	expect = 1;
+
 	bzero((void*)fieldName,255);
 	sprintf(fieldName,"%s@%d","number of modes",partID_counter);
 	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
   vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
 	int num_modes = array[0];
         printf("0 num_modes: %d\n", num_modes);
-
-	bzero((void*)fieldName,255);
-	sprintf(fieldName,"%s@%d","number of nodes",partID_counter);
-	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
-  vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
-	num_nodes = array[0];
-        ncverts=num_nodes;
-        printf("0 num_nodes: %d\n", num_nodes);
 
 	/* read number of elements */
 
@@ -1355,41 +1371,6 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 		}
 	}
 
-	/* read coordinates */
-	expect = 2;
-
-	///CHANGE/////////////////////////////////////////////////////
-	bzero((void*)fieldName,255);
-	sprintf(fieldName,"%s@%d","co-ordinates",partID_counter);
-	////CHANGE END//////////////////////////////////////////////////
-	readheader(&geomfile,fieldName,array,&expect,"double","binary");
-
-
-	//readheader(&geomfile,"co-ordinates",array,&expect,"double","binary");
-	// TEST *******************
-	num_nodes=array[0];
-	dim = array[1];
-
-
-	/* read the coordinates */
-
-	coordinates = new double [dim];
-	if(coordinates == NULL)
-	{
-		vtkErrorMacro(<<"Unable to allocate memory for nodal info");
-		return;
-	}
-
-	pos = new double [num_nodes*dim];
-	if(pos == NULL)
-	{
-		vtkErrorMacro(<<"Unable to allocate memory for nodal info");
-		return;
-	}
-
-	item = num_nodes*dim;
-
-	readdatablock(&geomfile,fieldName,pos,&item,"double","binary");
 	for(i=0;i<num_nodes;i++)
 	{
 		for(j=0;j<dim;j++)
