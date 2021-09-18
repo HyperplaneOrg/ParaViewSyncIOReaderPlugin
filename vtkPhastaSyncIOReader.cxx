@@ -1296,6 +1296,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 		connectivity = new int [num_elems*num_per_line];
 	        vtkDebugMacro ( << " nshl: " << num_per_line
 			<< " Elements: " << num_elems
+			<< " Edges: " << num_edges
 			<< " num_vertices: " << num_vertices);
 
 		if(connectivity == NULL)
@@ -1323,17 +1324,27 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 		/* insert cells */
 		for(i=0;i<num_elems;i++)
 		{
-			nodes = new vtkIdType[num_vertices];
+			nodes = new vtkIdType[num_per_line];
 
 			//connectivity starts from 1 so node[j] will never be -ve
-			for(j=0;j<num_vertices;j++)
+			for(j=0;j<num_per_line;j++)
 			{
 				nodes[j] = connectivity[i+num_elems*j] + firstVertexNo - 1;
+	                        if(i==10) vtkDebugMacro ( << " nodes: " << nodes[j]);
 			}
+//             vtkDebugMacro("computing evm"); 
              if(num_edges > 0) {
 // can build evm here
 			for(j=0;j<12;j++) {
               eA=1*(nodes[8+j]-num_nodes);
+              if(i==10) {
+	      vtkDebugMacro ( << " eA: " << eA
+			<< " j: " << j
+			<< " vmap1[j]: " << vmap1[j]
+			<< " vmap2[j]: " << vmap2[j]
+			<< " nodes[vmap1[j]]: " << nodes[vmap1[j]]
+			<< " nodes[vmap2[j]]: " << nodes[vmap2[j]]);
+              }
               evm1[eA]=nodes[vmap1[j]];
               evm2[eA]=nodes[vmap2[j]];
             }
@@ -1343,7 +1354,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 				 vertex  numbering start from 0 as opposed to 1 in geomfile */
 
 			// find out element type
-			switch(num_vertices)
+			switch(num_per_line)
 			{
 				case 4:
 					cell_type = VTK_TETRA;
@@ -1370,6 +1381,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 			delete [] nodes;
 		}
 	}
+        vtkDebugMacro("after element insertion"); 
 
 	for(i=0;i<num_nodes;i++)
 	{
@@ -1393,6 +1405,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 					return;
 		}
 	}
+        vtkDebugMacro("after corner vertex insertion"); 
 	for(i=0;i<num_modes-num_nodes;i++)
 	{
 		for(j=0;j<dim;j++)
@@ -1623,6 +1636,7 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 		///CHANGE END//////////////////////////////////////////////////
 		readheader(&fieldfile,fieldName,array,&expect,dataType,"binary");
 
+                vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", fieldfile = " << fieldfile);
 		//printf("fieldfile is %d expect is %d and datatype is %s\n",fieldfile,expect,dataType);
 
 		//printf("original fieldname is %s and fieldname is %s\n",phastaFieldTag,fieldName);
@@ -1634,6 +1648,7 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 		numOfVars = array[1];
 		dataArray->SetNumberOfTuples(noOfDatas);
 
+                vtkDebugMacro("after restart header nshg" << noOfDatas << ", numOfVars = " << numOfVars);
 		//printf("hello 4 in P\n");
 
 		if(index<0 || index>numOfVars-1)
@@ -1679,11 +1694,14 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 			//////////CHANGE/////////////////////
 			readdatablock(&fieldfile,fieldName,data,&item,dataType,"binary");
 			///////////CHANGE END///////////////
-            int idx, eV1, eV2, idV1, idV2, ide;
+                        vtkDebugMacro("after restart data nshg" << noOfDatas << ", ncverts = " << ncverts);
+       			int idx, eV1, eV2, idV1, idV2, ide;
 			for(i=ncverts;i<noOfDatas;i++) {
-              idx=i-ncverts;
-              eV1=evm1[idx];
-              eV2=evm2[idx];
+              			idx=i-ncverts;
+                        	vtkDebugMacro("idx=" << idx );
+              			eV1=evm1[idx];
+              			eV2=evm2[idx];
+                        	vtkDebugMacro("eV1=" << eV1 << " eV2=" << eV2);
 //              idx=2*(i-num_node);
 //              eV1=evm[idx];
 //              eV2=evm[idx+1];
@@ -1694,6 +1712,7 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
                 data[ide]=(data[idV1]+data[idV2]-data[ide])*0.5;
               }
             }
+                        vtkDebugMacro("after fix edge " << noOfDatas << ", ncverts = " << ncverts);
                            
           
 
