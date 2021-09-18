@@ -1105,6 +1105,21 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 
 	expect = 1;
 
+	/* read number of nodes */
+
+	///CHANGE/////////////////////////////////////////////////////
+	bzero((void*)fieldName,255);
+	sprintf(fieldName,"%s@%d","number of nodes",partID_counter);
+	///CHANGE END//////////////////////////////////////////////////
+	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
+	//readheader(&geomfile,"number of nodes",array,&expect,"integer","binary");
+  vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
+	int num_nodesb = array[0];
+        printf("0 num_nodesb: %d\n", num_nodesb);
+
+	/* read number of nodes */
+
+	///CHANGE/////////////////////////////////////////////////////
 	bzero((void*)fieldName,255);
 	sprintf(fieldName,"%s@%d","number of modes",partID_counter);
 	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
@@ -1117,6 +1132,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
   vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
 	num_nodes = array[0];
+        ncverts=num_nodes;
         printf("0 num_nodes: %d\n", num_nodes);
 
 	/* read number of elements */
@@ -1262,9 +1278,9 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 		num_vertices = array[1];
 		num_per_line = array[3];
 		connectivity = new int [num_elems*num_per_line];
-	        vtkDebugMacro ( << "nshl: " << num_per_line
-			<< "Elements: " << num_elems
-			<< "num_vertices: " << num_vertices);
+	        vtkDebugMacro ( << " nshl: " << num_per_line
+			<< " Elements: " << num_elems
+			<< " num_vertices: " << num_vertices);
 
 		if(connectivity == NULL)
 		{
