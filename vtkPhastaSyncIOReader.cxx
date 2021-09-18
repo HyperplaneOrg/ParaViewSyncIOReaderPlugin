@@ -852,7 +852,7 @@ void vtkPhastaSyncIOReader::readdatablock( int*  fileDescriptor,
 
 vtkPhastaSyncIOReader::vtkPhastaSyncIOReader()
 {
-  //this->DebugOn(); // TODO: comment out this line to turn off debug
+  this->DebugOn(); // TODO: comment out this line to turn off debug
 	this->GeometryFileName = NULL;
 	this->FieldFileName = NULL;
 	this->SetNumberOfInputPorts(0);
@@ -987,7 +987,10 @@ int vtkPhastaSyncIOReader::RequestData(vtkInformation*,
 	vtkDebugMacro(<< "Field File : " << this->FieldFileName);
 
 	fvn = firstVertexNo;
-	this->ReadGeomFile(this->GeometryFileName, firstVertexNo, points, noOfNodes, noOfCells);
+	int* evm1;
+    	int* evm2;
+        int ncverts;
+	this->ReadGeomFile(this->GeometryFileName, firstVertexNo, points, noOfNodes, noOfCells,ncverts, evm1,evm2);
 	/* set the points over here, this is because vtkUnStructuredGrid
 		 only insert points once, next insertion overwrites the previous one */
 	// acbauer is not sure why the above comment is about...
@@ -1050,7 +1053,9 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 		int &firstVertexNo,
 		vtkPoints *points,
 		int &num_nodes,
-		int &num_cells)
+		int &num_cells,
+		int &ncverts,
+        int *evm1, int *evm2 )
 {
 	vtkDebugMacro("in P ReadGeomFile(): partID="<<partID_counter);
 
@@ -1108,7 +1113,30 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
 	//readheader(&geomfile,"number of nodes",array,&expect,"integer","binary");
   vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
+	int num_nodesb = array[0];
+        printf("0 num_nodesb: %d\n", num_nodesb);
+
+	/* read number of nodes */
+
+	///CHANGE/////////////////////////////////////////////////////
+	bzero((void*)fieldName,255);
+	sprintf(fieldName,"%s@%d","number of modes",partID_counter);
+	///CHANGE END//////////////////////////////////////////////////
+	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
+	//readheader(&geomfile,"number of nodes",array,&expect,"integer","binary");
+  vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
+	int num_modes = array[0];
+        printf("0 num_modes: %d\n", num_modes);
+
+	///CHANGE/////////////////////////////////////////////////////
+	bzero((void*)fieldName,255);
+	sprintf(fieldName,"%s@%d","number of nodes",partID_counter);
+	///CHANGE END//////////////////////////////////////////////////
+	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
+  vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
 	num_nodes = array[0];
+        ncverts=num_nodes;
+        printf("0 num_nodes: %d\n", num_nodes);
 
 	/* read number of elements */
 
@@ -1139,7 +1167,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
 	num_int_blocks = array[0];
 
-        //printf("1 tpblocks: %d\n", num_int_blocks);
+        printf("1 tpblocks: %d\n", num_int_blocks);
 
 
 	/*readheader(&geomfile,

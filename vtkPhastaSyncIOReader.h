@@ -78,7 +78,7 @@ protected:
                     int &firstVertexNo,
                     vtkPoints *points, 
                     int &noOfNodes,
-                    int &noOfCells);
+                    int &noOfCells, int &ncverts, int *evm1, int *evm2 );
   void ReadFieldFile(char *fieldFileName , 
                      int firstVertexNo, 
                      vtkDataSetAttributes *field, 
