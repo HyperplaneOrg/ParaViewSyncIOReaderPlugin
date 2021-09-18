@@ -86,7 +86,7 @@ protected:
   void ReadFieldFile(char *fieldFileName,
                      int firstVertexNo,
                      vtkUnstructuredGrid *output,
-                     int &noOfDatas);
+                     int &noOfDatas, int &ncverts, int *evm1, int *evm2 );
 
 private:
   char *GeometryFileName;

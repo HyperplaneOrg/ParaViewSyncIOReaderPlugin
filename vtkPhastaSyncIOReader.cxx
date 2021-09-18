@@ -1004,7 +1004,7 @@ int vtkPhastaSyncIOReader::RequestData(vtkInformation*,
 	}
 	else
 	{
-		this->ReadFieldFile(this->FieldFileName, fvn, output, noOfDatas);
+		this->ReadFieldFile(this->FieldFileName, fvn, output, noOfDatas,ncverts,evm1,evm2);
 	}
 
 	// if there exists point arrays called coordsX, coordsY and coordsZ,
@@ -1102,41 +1102,53 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 
 	int expect;
 	int array[10];
+	/* read coordinates */
+	expect = 2;
+
+	///CHANGE/////////////////////////////////////////////////////
+	bzero((void*)fieldName,255);
+	sprintf(fieldName,"%s@%d","co-ordinates",partID_counter);
+	////CHANGE END//////////////////////////////////////////////////
+	readheader(&geomfile,fieldName,array,&expect,"double","binary");
+
+
+	//readheader(&geomfile,"co-ordinates",array,&expect,"double","binary");
+	// TEST *******************
+	num_nodes=array[0];
+	dim = array[1];
+
+
+	/* read the coordinates */
+
+	coordinates = new double [dim];
+	if(coordinates == NULL)
+	{
+		vtkErrorMacro(<<"Unable to allocate memory for nodal info");
+		return;
+	}
+
+	pos = new double [num_nodes*dim];
+	if(pos == NULL)
+	{
+		vtkErrorMacro(<<"Unable to allocate memory for nodal info");
+		return;
+	}
+
+	item = num_nodes*dim;
+
+	//CHANGE
+	//readdatablock(&geomfile,"co-ordinates",pos,&item,"double","binary");
+	//CHANGE END
+	readdatablock(&geomfile,fieldName,pos,&item,"double","binary");
+
 	expect = 1;
 
-	/* read number of nodes */
-
-	///CHANGE/////////////////////////////////////////////////////
-	bzero((void*)fieldName,255);
-	sprintf(fieldName,"%s@%d","number of nodes",partID_counter);
-	///CHANGE END//////////////////////////////////////////////////
-	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
-	//readheader(&geomfile,"number of nodes",array,&expect,"integer","binary");
-  vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
-	int num_nodesb = array[0];
-        printf("0 num_nodesb: %d\n", num_nodesb);
-
-	/* read number of nodes */
-
-	///CHANGE/////////////////////////////////////////////////////
 	bzero((void*)fieldName,255);
 	sprintf(fieldName,"%s@%d","number of modes",partID_counter);
-	///CHANGE END//////////////////////////////////////////////////
 	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
-	//readheader(&geomfile,"number of nodes",array,&expect,"integer","binary");
   vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
 	int num_modes = array[0];
         printf("0 num_modes: %d\n", num_modes);
-
-	///CHANGE/////////////////////////////////////////////////////
-	bzero((void*)fieldName,255);
-	sprintf(fieldName,"%s@%d","number of nodes",partID_counter);
-	///CHANGE END//////////////////////////////////////////////////
-	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
-  vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
-	num_nodes = array[0];
-        ncverts=num_nodes;
-        printf("0 num_nodes: %d\n", num_nodes);
 
 	/* read number of elements */
 
@@ -1209,77 +1221,50 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 			<< "Elements: " << num_elems
 			<< "tpblocks: " << num_int_blocks );
 
-	/* read coordinates */
-	expect = 2;
 
-	///CHANGE/////////////////////////////////////////////////////
-	bzero((void*)fieldName,255);
-	sprintf(fieldName,"%s@%d","co-ordinates",partID_counter);
+	sprintf(fieldName,"%s@%d","number of modes",partID_counter);
 	///CHANGE END//////////////////////////////////////////////////
 	readheader(&geomfile,fieldName,array,&expect,"double","binary");
 
+// only true for quadratics
 
-	//readheader(&geomfile,"co-ordinates",array,&expect,"double","binary");
-	// TEST *******************
-	num_nodes=array[0];
-	// TEST *******************
-	if(num_nodes !=array[0])
-	{
-		vtkErrorMacro(<<"Ambigous information in geom.data file, number of nodes does not match the co-ordinates size. Nodes: " << num_nodes << " Coordinates: " << array[0]);
-		return;
-	}
-	dim = array[1];
-
-
-	/* read the coordinates */
-
-	coordinates = new double [dim];
-	if(coordinates == NULL)
-	{
-		vtkErrorMacro(<<"Unable to allocate memory for nodal info");
-		return;
-	}
-
-	pos = new double [num_nodes*dim];
-	if(pos == NULL)
-	{
-		vtkErrorMacro(<<"Unable to allocate memory for nodal info");
-		return;
-	}
-
-	item = num_nodes*dim;
-
-	//CHANGE
-	//readdatablock(&geomfile,"co-ordinates",pos,&item,"double","binary");
-	//CHANGE END
-	readdatablock(&geomfile,fieldName,pos,&item,"double","binary");
-
-	for(i=0;i<num_nodes;i++)
-	{
-		for(j=0;j<dim;j++)
-		{
-			coordinates[j] = pos[j*num_nodes + i];
-		}
-		switch(dim)
-		{
-			case 1:
-				points->InsertPoint(i+firstVertexNo,coordinates[0],0,0);
-				break;
-			case 2:
-				points->InsertPoint(i+firstVertexNo,coordinates[0],coordinates[1],0);
-				break;
-			case 3:
-				points->InsertNextPoint(coordinates);
-				break;
-			default:
-				vtkErrorMacro(<<"Unrecognized dimension in "<< geomFileName)
-					return;
-		}
-	}
+    int num_edges=num_modes-num_nodes;
+	vtkDebugMacro ( << "edges: " << num_edges
+			<< "tpblocks: " << num_int_blocks );
+    if(num_edges > 0) {
+	evm1 = new int [num_edges];
+	evm2 = new int [num_edges];
+    }
+    int vmap1[12];
+    int vmap2[12];
+    vmap1[0]= 0;
+    vmap1[1]= 1;
+    vmap1[2]= 2;
+    vmap1[3]= 3;
+    vmap1[4]= 4;
+    vmap1[5]= 5;
+    vmap1[6]= 6;
+    vmap1[7]= 7;
+    vmap1[8]= 0;
+    vmap1[9]= 1;
+    vmap1[10]= 2;
+    vmap1[11]= 3;
+    vmap2[0]= 1;
+    vmap2[1]= 2;
+    vmap2[2]= 3;
+    vmap2[3]= 0;
+    vmap2[4]= 5;
+    vmap2[5]= 6;
+    vmap2[6]= 7;
+    vmap2[7]= 4;
+    vmap2[8]= 4;
+    vmap2[9]= 5;
+    vmap2[10]= 6;
+    vmap2[11]= 7;
+    int eA;
 
 	/* read the connectivity information */
 	expect = 7;
-
 	for(k=0;k<num_int_blocks;k++)
 	{
 
@@ -1308,6 +1293,9 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 		num_vertices = array[1];
 		num_per_line = array[3];
 		connectivity = new int [num_elems*num_per_line];
+	        vtkDebugMacro ( << "nshl: " << num_per_line
+			<< "Elements: " << num_elems
+			<< "num_vertices: " << num_vertices);
 
 		if(connectivity == NULL)
 		{
@@ -1341,7 +1329,15 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 			{
 				nodes[j] = connectivity[i+num_elems*j] + firstVertexNo - 1;
 			}
-
+             if(num_edges > 0) {
+// can build evm here
+			for(j=0;j<12;j++) {
+              eA=1*(nodes[8+j]-num_nodes);
+              evm1[eA]=nodes[vmap1[j]];
+              evm2[eA]=nodes[vmap2[j]];
+            }
+              }
+            
 			/* 1 is subtracted from the connectivity info to reflect that in vtk
 				 vertex  numbering start from 0 as opposed to 1 in geomfile */
 
@@ -1359,7 +1355,9 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 					break;
 				case 8:
 					cell_type = VTK_HEXAHEDRON;
-
+					break;
+				case 20:
+					cell_type = VTK_QUADRATIC_HEXAHEDRON;
 					break;
 				default:
 					vtkErrorMacro(<<"Unrecognized CELL_TYPE in "<< geomFileName)
@@ -1371,6 +1369,52 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 			delete [] nodes;
 		}
 	}
+
+	for(i=0;i<num_nodes;i++)
+	{
+		for(j=0;j<dim;j++)
+		{
+			coordinates[j] = pos[j*num_nodes + i];
+		}
+		switch(dim)
+		{
+			case 1:
+				points->InsertPoint(i+firstVertexNo,coordinates[0],0,0);
+				break;
+			case 2:
+				points->InsertPoint(i+firstVertexNo,coordinates[0],coordinates[1],0);
+				break;
+			case 3:
+				points->InsertNextPoint(coordinates);
+				break;
+			default:
+				vtkErrorMacro(<<"Unrecognized dimension in "<< geomFileName)
+					return;
+		}
+	}
+	for(i=0;i<num_modes-num_nodes;i++)
+	{
+		for(j=0;j<dim;j++)
+		{
+			coordinates[j] = (pos[j*evm1[i] + i]+pos[j*evm2[i] + i])*0.5;
+		}
+		switch(dim)
+		{
+			case 1:
+				points->InsertPoint(i+firstVertexNo,coordinates[0],0,0);
+				break;
+			case 2:
+				points->InsertPoint(i+firstVertexNo,coordinates[0],coordinates[1],0);
+				break;
+			case 3:
+				points->InsertNextPoint(coordinates);
+				break;
+			default:
+				vtkErrorMacro(<<"Unrecognized dimension in "<< geomFileName)
+					return;
+		}
+	}
+        num_nodes=num_modes; // from this point forward there is a mesh node for each edge as PV expects.
 	// update the firstVertexNo so that next slice/partition can be read
 	firstVertexNo = firstVertexNo + num_nodes;
 
@@ -1492,7 +1536,9 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 		int,
 		vtkUnstructuredGrid *output,
-		int &noOfDatas)
+		int &noOfDatas, 
+		int &ncverts, 
+        int *evm1, int *evm2)
 {
 
   vtkDebugMacro("In P ReadFieldFile (vtkUnstructuredGrid): fieldFileName="<<fieldFileName << ", partID_counter=" << partID_counter);
@@ -1632,6 +1678,23 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 			//////////CHANGE/////////////////////
 			readdatablock(&fieldfile,fieldName,data,&item,dataType,"binary");
 			///////////CHANGE END///////////////
+            int idx, eV1, eV2, idV1, idV2, ide;
+			for(i=ncverts;i<noOfDatas;i++) {
+              idx=i-ncverts;
+              eV1=evm1[idx];
+              eV2=evm2[idx];
+//              idx=2*(i-num_node);
+//              eV1=evm[idx];
+//              eV2=evm[idx+1];
+			  for(j=0;j<numOfVars;j++) {
+                idV1=eV1+j*noOfDatas;
+                idV2=eV2+j*noOfDatas;
+                ide=i+j*noOfDatas;
+                data[ide]=(data[idV1]+data[idV2]-data[ide])*0.5;
+              }
+            }
+                           
+          
 
 			//readdatablock(&fieldfile,phastaFieldTag,data,&item,dataType,"binary");
 
