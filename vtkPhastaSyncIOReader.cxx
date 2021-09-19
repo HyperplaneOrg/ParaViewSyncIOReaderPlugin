@@ -1182,9 +1182,6 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
 	num_int_blocks = array[0];
 
-        printf("1 tpblocks: %d\n", num_int_blocks);
-
-
 	/*readheader(&geomfile,
 		"number of interior tpblocks",
 		array,
