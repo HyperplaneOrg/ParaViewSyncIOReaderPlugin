@@ -852,7 +852,7 @@ void vtkPhastaSyncIOReader::readdatablock( int*  fileDescriptor,
 
 vtkPhastaSyncIOReader::vtkPhastaSyncIOReader()
 {
-  this->DebugOn(); // TODO: comment out this line to turn off debug
+//  this->DebugOn(); // TODO: comment out this line to turn off debug
 	this->GeometryFileName = NULL;
 	this->FieldFileName = NULL;
 	this->SetNumberOfInputPorts(0);
@@ -982,7 +982,7 @@ int vtkPhastaSyncIOReader::RequestData(vtkInformation*,
 		vtkErrorMacro(<<"All input parameters not set.");
 		return 0;
 	}
-	vtkDebugMacro(<< "Updating ensa with ....");
+	vtkDebugMacro(<< "Updating with ....");
 	vtkDebugMacro(<< "Geom File : " << this->GeometryFileName);
 	vtkDebugMacro(<< "Field File : " << this->FieldFileName);
 
@@ -1006,6 +1006,8 @@ int vtkPhastaSyncIOReader::RequestData(vtkInformation*,
 	{
 		this->ReadFieldFile(this->FieldFileName, fvn, output, noOfDatas,ncverts,&evm1,&evm2);
 	}
+        delete evm1;
+        delete evm2;
 
 	// if there exists point arrays called coordsX, coordsY and coordsZ,
 	// create another array of point data and set the output to use this
@@ -1147,9 +1149,9 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 	bzero((void*)fieldName,255);
 	sprintf(fieldName,"%s@%d","number of modes",partID_counter);
 	readheader(&geomfile,fieldName,array,&expect,"integer","binary");
-  vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
+  	vtkDebugMacro("after readheader(), fieldName=" << fieldName << ", geomfile (file desc) = " << geomfile);
 	int num_modes = array[0];
-        printf("0 num_modes: %d\n", num_modes);
+//        printf("0 num_modes: %d\n", num_modes);
 
 	/* read number of elements */
 
@@ -1330,7 +1332,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 			for(j=0;j<num_per_line;j++)
 			{
 				nodes[j] = connectivity[i+num_elems*j] + firstVertexNo - 1;
-	      if(i==10 ) vtkDebugMacro ( << " nodes: " << nodes[j]);
+//intrusive	      if(i==10 ) vtkDebugMacro ( << " nodes: " << nodes[j]);
 			}
 //    vtkDebugMacro("computing evm"); 
       if(num_edges > 0) {
@@ -1338,15 +1340,15 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 				for(j=0;j<12;j++) {
 // nodes has an offiset of nodes summed from prior parts  before this one.  evm1 and 2 are maps within this part so decrement back 
           eA=1*(nodes[8+j]-num_nodes-firstVertexNo);
-          if(i==10 ) {
-	      		vtkDebugMacro ( << " eA: " << eA
-														<< " firstVertexNo: " << firstVertexNo
-														<< " j: " << j
-														<< " vmap1[j]: " << vmap1[j]
-														<< " vmap2[j]: " << vmap2[j]
-														<< " nodes[vmap1[j]]: " << nodes[vmap1[j]]
-														<< " nodes[vmap2[j]]: " << nodes[vmap2[j]]);
-          }
+//          if(i==10 ) {
+//	      		vtkDebugMacro ( << " eA: " << eA
+//														<< " firstVertexNo: " << firstVertexNo
+//														<< " j: " << j
+//														<< " vmap1[j]: " << vmap1[j]
+//														<< " vmap2[j]: " << vmap2[j]
+//														<< " nodes[vmap1[j]]: " << nodes[vmap1[j]]
+//														<< " nodes[vmap2[j]]: " << nodes[vmap2[j]]);
+//          }
           (*evm1)[eA]=nodes[vmap1[j]];
           (*evm2)[eA]=nodes[vmap2[j]];
         }
@@ -1408,21 +1410,21 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 		}
 	}
         vtkDebugMacro("after corner vertex insertion num_nodes and num_modes " << num_nodes << " " << num_modes); 
-  int eV1,eV2;
+  	int eV1,eV2;
 	for(i=0;i<num_modes-num_nodes;i++)
 	{
-    eV1=(*evm1)[i];
-    eV2=(*evm2)[i];
+    		eV1=(*evm1)[i];
+    		eV2=(*evm2)[i];
 		for(j=0;j<dim;j++)
 		{
 			coordinates[j] = (pos[j*num_nodes+eV1]+pos[j*num_nodes+eV2])*0.5;
 		}
-	  if(i<24)vtkDebugMacro ( << " i " << i
-														<< " evm1(i): " << eV1
-														<< " evm2(j): " << eV2
-														<< " xe: " << coordinates[2]
-														<< " x1: " << pos[2*num_nodes+eV1]
-														<< " x2: " << pos[2*num_nodes+eV2]);
+//	  if(i<24)vtkDebugMacro ( << " i " << i
+//														<< " evm1(i): " << eV1
+//														<< " evm2(j): " << eV2
+//														<< " xe: " << coordinates[2]
+//														<< " x1: " << pos[2*num_nodes+eV1]
+//														<< " x2: " << pos[2*num_nodes+eV2]);
 		switch(dim)
 		{
 			case 1:
@@ -1711,7 +1713,7 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
       	idx=i-ncverts;
         eV1=(*evm1)[idx];
         eV2=(*evm2)[idx];
-        if(idx<24) vtkDebugMacro("eV1=" << eV1 << " eV2=" << eV2);
+//intrusive        if(idx<24) vtkDebugMacro("eV1=" << eV1 << " eV2=" << eV2);
 //              idx=2*(i-num_node);
 //              eV1=evm[idx];
 //              eV2=evm[idx+1];
