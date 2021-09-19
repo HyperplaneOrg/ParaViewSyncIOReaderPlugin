@@ -1330,7 +1330,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 			for(j=0;j<num_per_line;j++)
 			{
 				nodes[j] = connectivity[i+num_elems*j] + firstVertexNo - 1;
-	                        if(i==10 ) vtkDebugMacro ( << " nodes: " << nodes[j]);
+	      if(i==10 ) vtkDebugMacro ( << " nodes: " << nodes[j]);
 			}
 //    vtkDebugMacro("computing evm"); 
       if(num_edges > 0) {
@@ -1379,7 +1379,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 			}
 
 			/* insert the element */
-			output->InsertNextCell(cell_type,num_vertices,nodes);
+			output->InsertNextCell(cell_type,num_per_line,nodes);
 			delete [] nodes;
 		}
 	}
