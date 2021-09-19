@@ -990,7 +990,7 @@ int vtkPhastaSyncIOReader::RequestData(vtkInformation*,
 	int* evm1;
     	int* evm2;
         int ncverts;
-	this->ReadGeomFile(this->GeometryFileName, firstVertexNo, points, noOfNodes, noOfCells,ncverts, evm1,evm2);
+	this->ReadGeomFile(this->GeometryFileName, firstVertexNo, points, noOfNodes, noOfCells,ncverts, &evm1,&evm2);
 	/* set the points over here, this is because vtkUnStructuredGrid
 		 only insert points once, next insertion overwrites the previous one */
 	// acbauer is not sure why the above comment is about...
@@ -1004,7 +1004,7 @@ int vtkPhastaSyncIOReader::RequestData(vtkInformation*,
 	}
 	else
 	{
-		this->ReadFieldFile(this->FieldFileName, fvn, output, noOfDatas,ncverts,evm1,evm2);
+		this->ReadFieldFile(this->FieldFileName, fvn, output, noOfDatas,ncverts,&evm1,&evm2);
 	}
 
 	// if there exists point arrays called coordsX, coordsY and coordsZ,
@@ -1055,7 +1055,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 		int &num_nodes,
 		int &num_cells,
 		int &ncverts,
-        int *evm1, int *evm2 )
+        int **evm1, int **evm2 )
 {
 	vtkDebugMacro("in P ReadGeomFile(): partID="<<partID_counter);
 
@@ -1233,8 +1233,8 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 	vtkDebugMacro ( << "edges: " << num_edges
 			<< "tpblocks: " << num_int_blocks );
     if(num_edges > 0) {
-	evm1 = new int [num_edges];
-	evm2 = new int [num_edges];
+	(*evm1) = new int [num_edges];
+	(*evm2) = new int [num_edges];
     }
     int vmap1[12];
     int vmap2[12];
@@ -1323,32 +1323,34 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 
 		/* insert cells */
 		for(i=0;i<num_elems;i++)
-		{
+		{ 
 			nodes = new vtkIdType[num_per_line];
 
 			//connectivity starts from 1 so node[j] will never be -ve
 			for(j=0;j<num_per_line;j++)
 			{
 				nodes[j] = connectivity[i+num_elems*j] + firstVertexNo - 1;
-	                        if(i==10) vtkDebugMacro ( << " nodes: " << nodes[j]);
+	                        if(i==10 ) vtkDebugMacro ( << " nodes: " << nodes[j]);
 			}
-//             vtkDebugMacro("computing evm"); 
-             if(num_edges > 0) {
+//    vtkDebugMacro("computing evm"); 
+      if(num_edges > 0) {
 // can build evm here
-			for(j=0;j<12;j++) {
-              eA=1*(nodes[8+j]-num_nodes);
-              if(i==10) {
-	      vtkDebugMacro ( << " eA: " << eA
-			<< " j: " << j
-			<< " vmap1[j]: " << vmap1[j]
-			<< " vmap2[j]: " << vmap2[j]
-			<< " nodes[vmap1[j]]: " << nodes[vmap1[j]]
-			<< " nodes[vmap2[j]]: " << nodes[vmap2[j]]);
-              }
-              evm1[eA]=nodes[vmap1[j]];
-              evm2[eA]=nodes[vmap2[j]];
-            }
-              }
+				for(j=0;j<12;j++) {
+// nodes has an offiset of nodes summed from prior parts  before this one.  evm1 and 2 are maps within this part so decrement back 
+          eA=1*(nodes[8+j]-num_nodes-firstVertexNo);
+          if(i==10 ) {
+	      		vtkDebugMacro ( << " eA: " << eA
+														<< " firstVertexNo: " << firstVertexNo
+														<< " j: " << j
+														<< " vmap1[j]: " << vmap1[j]
+														<< " vmap2[j]: " << vmap2[j]
+														<< " nodes[vmap1[j]]: " << nodes[vmap1[j]]
+														<< " nodes[vmap2[j]]: " << nodes[vmap2[j]]);
+          }
+          (*evm1)[eA]=nodes[vmap1[j]];
+          (*evm2)[eA]=nodes[vmap2[j]];
+        }
+      }
             
 			/* 1 is subtracted from the connectivity info to reflect that in vtk
 				 vertex  numbering start from 0 as opposed to 1 in geomfile */
@@ -1405,13 +1407,22 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 					return;
 		}
 	}
-        vtkDebugMacro("after corner vertex insertion"); 
+        vtkDebugMacro("after corner vertex insertion num_nodes and num_modes " << num_nodes << " " << num_modes); 
+  int eV1,eV2;
 	for(i=0;i<num_modes-num_nodes;i++)
 	{
+    eV1=(*evm1)[i];
+    eV2=(*evm2)[i];
 		for(j=0;j<dim;j++)
 		{
-			coordinates[j] = (pos[j*evm1[i] + i]+pos[j*evm2[i] + i])*0.5;
+			coordinates[j] = (pos[j*num_nodes+eV1]+pos[j*num_nodes+eV2])*0.5;
 		}
+	  if(i<24)vtkDebugMacro ( << " i " << i
+														<< " evm1(i): " << eV1
+														<< " evm2(j): " << eV2
+														<< " xe: " << coordinates[2]
+														<< " x1: " << pos[2*num_nodes+eV1]
+														<< " x2: " << pos[2*num_nodes+eV2]);
 		switch(dim)
 		{
 			case 1:
@@ -1552,7 +1563,7 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 		vtkUnstructuredGrid *output,
 		int &noOfDatas, 
 		int &ncverts, 
-        int *evm1, int *evm2)
+        int **evm1, int **evm2)
 {
 
   vtkDebugMacro("In P ReadFieldFile (vtkUnstructuredGrid): fieldFileName="<<fieldFileName << ", partID_counter=" << partID_counter);
@@ -1695,24 +1706,23 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 			readdatablock(&fieldfile,fieldName,data,&item,dataType,"binary");
 			///////////CHANGE END///////////////
                         vtkDebugMacro("after restart data nshg" << noOfDatas << ", ncverts = " << ncverts);
-       			int idx, eV1, eV2, idV1, idV2, ide;
+      int idx, eV1, eV2, idV1, idV2, ide;
 			for(i=ncverts;i<noOfDatas;i++) {
-              			idx=i-ncverts;
-                        	vtkDebugMacro("idx=" << idx );
-              			eV1=evm1[idx];
-              			eV2=evm2[idx];
-                        	vtkDebugMacro("eV1=" << eV1 << " eV2=" << eV2);
+      	idx=i-ncverts;
+        eV1=(*evm1)[idx];
+        eV2=(*evm2)[idx];
+        if(idx<24) vtkDebugMacro("eV1=" << eV1 << " eV2=" << eV2);
 //              idx=2*(i-num_node);
 //              eV1=evm[idx];
 //              eV2=evm[idx+1];
 			  for(j=0;j<numOfVars;j++) {
-                idV1=eV1+j*noOfDatas;
-                idV2=eV2+j*noOfDatas;
-                ide=i+j*noOfDatas;
-                data[ide]=(data[idV1]+data[idV2]-data[ide])*0.5;
-              }
-            }
-                        vtkDebugMacro("after fix edge " << noOfDatas << ", ncverts = " << ncverts);
+        	idV1=eV1+j*noOfDatas;
+        	idV2=eV2+j*noOfDatas;
+          ide=i+j*noOfDatas;
+          data[ide]=(data[idV1]+data[idV2]-data[ide])*0.5;
+        }
+      }
+      vtkDebugMacro("after fix edge " << noOfDatas << ", ncverts = " << ncverts);
                            
           
 

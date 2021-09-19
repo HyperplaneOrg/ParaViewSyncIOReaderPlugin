@@ -78,7 +78,7 @@ protected:
                     int &firstVertexNo,
                     vtkPoints *points, 
                     int &noOfNodes,
-                    int &noOfCells, int &ncverts, int *evm1, int *evm2 );
+                    int &noOfCells, int &ncverts, int **evm1, int **evm2 );
   void ReadFieldFile(char *fieldFileName , 
                      int firstVertexNo, 
                      vtkDataSetAttributes *field, 
@@ -86,7 +86,7 @@ protected:
   void ReadFieldFile(char *fieldFileName,
                      int firstVertexNo,
                      vtkUnstructuredGrid *output,
-                     int &noOfDatas, int &ncverts, int *evm1, int *evm2 );
+                     int &noOfDatas, int &ncverts, int **evm1, int **evm2 );
 
 private:
   char *GeometryFileName;
