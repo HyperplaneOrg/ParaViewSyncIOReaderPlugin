@@ -1,0 +1,6 @@
+NAME
+  PhastaSyncIO
+DEPENDS
+  VTK::CommonCore
+  VTK::FiltersCore
+  ParaView::VTKExtensionsCore

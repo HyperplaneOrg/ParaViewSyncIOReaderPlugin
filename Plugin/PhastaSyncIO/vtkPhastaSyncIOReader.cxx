@@ -1244,7 +1244,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 				points->InsertNextPoint(coordinates);
 				break;
 			default:
-				vtkErrorMacro(<<"Unrecognized dimension in "<< geomFileName)
+				vtkErrorMacro(<<"Unrecognized dimension in "<< geomFileName);
 					return;
 		}
 	}
@@ -1334,7 +1334,7 @@ void vtkPhastaSyncIOReader::ReadGeomFile(char* geomFileName,
 
 					break;
 				default:
-					vtkErrorMacro(<<"Unrecognized CELL_TYPE in "<< geomFileName)
+					vtkErrorMacro(<<"Unrecognized CELL_TYPE in "<< geomFileName);
 						return;
 			}
 
@@ -1376,7 +1376,7 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 
 	if(!fieldfile)
 	{
-		vtkErrorMacro(<<"Cannot open file " << FieldFileName)
+		vtkErrorMacro(<<"Cannot open file " << FieldFileName);
 			return;
 	}
 	int array[10], expect;
@@ -1490,7 +1490,7 @@ void vtkPhastaSyncIOReader::ReadFieldFile(char* fieldFileName,
 
 	if(!fieldfile)
 	{
-		vtkErrorMacro(<<"Cannot open file " << FieldFileName)
+		vtkErrorMacro(<<"Cannot open file " << FieldFileName);
 			//return;
 	}
 	int array[10], expect;
